@@ -128,12 +128,15 @@ async function run() {
       }
     });
 
+    // admin cruds
+    
+
+
     //properties
 
     app.get("/properties", async (req, res) => {
       try {
         const email = req.query.email
-        console.log(email)
         if(email){
           const query = {agent_email: email} 
           const result = await propertiesCollection.find(query).toArray();
@@ -178,6 +181,17 @@ async function run() {
         res.send(result)
       }catch(err){
         console.log(err);
+      }
+    })
+    app.delete("/property/:id", async(req, res) => {
+      try{
+        const id = req.params.id
+        
+        const query = {_id: new ObjectId(id)}
+        const result = await propertiesCollection.deleteOne(query)
+        res.send(result)
+      }catch(err){
+        res.send(err)
       }
     })
 
