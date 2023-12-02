@@ -109,7 +109,7 @@ async function run() {
     app.get("/user", async (req, res) => {
       try {
         const query = req.query.email;
-        console.log("Query --->", query);
+        // console.log("Query --->", query);
         const result = await usersCollection.findOne({ email: query });
         res.send(result);
       } catch (err) {
@@ -132,6 +132,13 @@ async function run() {
 
     app.get("/properties", async (req, res) => {
       try {
+        const email = req.query.email
+        console.log(email)
+        if(email){
+          const query = {agent_email: email} 
+          const result = await propertiesCollection.find(query).toArray();
+          return res.send(result)
+        }
         const result = await propertiesCollection.find().toArray();
         res.send(result);
       } catch (err) {
@@ -140,6 +147,7 @@ async function run() {
     });
     app.get("/property/:id", async (req, res) => {
       try {
+       
         const id = req.params;
         const query = { _id: new ObjectId(id) };
         const result = await propertiesCollection.findOne(query);
@@ -148,6 +156,30 @@ async function run() {
         console.log(err);
       }
     });
+    app.put("/property/:id", async(req, res) => {
+      try{
+        const id = req.params.id
+        const filter = {_id : new ObjectId(id)}
+        const options = {upsert : true}
+        const updatedProperty = req.body
+        const property = {
+          $set: {
+            title: updatedProperty.title,
+            location: updatedProperty.location,
+            image: updatedProperty.image,
+            description: updatedProperty.description,
+            price: {
+              start: updatedProperty.price.start,
+              end: updatedProperty.price.end,
+            },
+          }
+        }
+        const result = await propertiesCollection.updateOne(filter, property, options)
+        res.send(result)
+      }catch(err){
+        console.log(err);
+      }
+    })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
