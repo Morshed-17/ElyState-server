@@ -129,7 +129,25 @@ async function run() {
     });
 
     // admin cruds
-    
+    app.patch("/property/:id", async(req, res) => {
+      try{
+        const id = req.params.id
+      const filter = {_id: new ObjectId(id)}
+      const updatedStatus = req.body
+      
+      const status = {
+        $set: {
+          verification: updatedStatus.verification
+        }
+      }
+        const result = await propertiesCollection.updateOne(filter, status)
+        res.send(result)
+      }catch(err){
+        console.log(err);
+      }
+
+
+    })
 
 
     //properties
