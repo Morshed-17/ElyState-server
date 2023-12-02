@@ -46,6 +46,8 @@ async function run() {
       .db("ElyStateDB")
       .collection("properties");
 
+    const usersCollection = client.db("ElyStateDB").collection("users");
+
     // auth related api
     app.post("/jwt", async (req, res) => {
       const user = req.body;
@@ -80,21 +82,50 @@ async function run() {
 
     // Save or modify user email, status in DB
     app.put("/users/:email", async (req, res) => {
-      const email = req.params.email;
-      const user = req.body;
-      const query = { email: email };
-      const options = { upsert: true };
-      const isExist = await usersCollection.findOne(query);
-      console.log("User found?----->", isExist);
-      if (isExist) return res.send(isExist);
-      const result = await usersCollection.updateOne(
-        query,
-        {
-          $set: { ...user, timestamp: Date.now() },
-        },
-        options
-      );
+      try {
+        const email = req.params.email;
+        const user = req.body;
+        const query = { email: email };
+        const options = { upsert: true };
+        const isExist = await usersCollection.findOne(query);
+        console.log("User found?----->", isExist);
+        if (isExist) return res.send(isExist);
+        const result = await usersCollection.updateOne(
+          query,
+          {
+            $set: { ...user, timestamp: Date.now() },
+          },
+          options
+        );
+        res.send(result);
+      } catch (err) {
+        console.log(err);
+      }
+    });
+    app.get("/users", async (req, res) => {
+      const result = await usersCollection.find().toArray();
       res.send(result);
+    });
+    app.get("/user", async (req, res) => {
+      try {
+        const query = req.query.email;
+        console.log("Query --->", query);
+        const result = await usersCollection.findOne({ email: query });
+        res.send(result);
+      } catch (err) {
+        console.log(err);
+      }
+    });
+
+    // agent cruds
+    app.post("/properties", async (req, res) => {
+      try {
+        const property = req.body;
+        const result = await propertiesCollection.insertOne(property);
+        res.send(result);
+      } catch (err) {
+        console.log(err);
+      }
     });
 
     //properties
@@ -109,10 +140,10 @@ async function run() {
     });
     app.get("/property/:id", async (req, res) => {
       try {
-        const id = req.params
-        const query = {_id: new ObjectId(id)}
+        const id = req.params;
+        const query = { _id: new ObjectId(id) };
         const result = await propertiesCollection.findOne(query);
-        res.send(result);           
+        res.send(result);
       } catch (err) {
         console.log(err);
       }
