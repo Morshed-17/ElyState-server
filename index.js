@@ -149,6 +149,17 @@ async function run() {
       }
     })
 
+    app.get("/wishlist/:id", async(req, res) => {
+      try{
+        const id = req.params.id
+        const query = {_id: new ObjectId(id)}
+        const result = await wishlistCollection.findOne(query)
+        res.send(result)
+      }catch(err){
+        console.log(err)
+      }
+    })
+
     app.delete("/wishlist/:id", async(req, res) => {
       try{
         const id = req.params.id
