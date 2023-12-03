@@ -47,6 +47,7 @@ async function run() {
       .collection("properties");
 
     const usersCollection = client.db("ElyStateDB").collection("users");
+    const wishlistCollection = client.db("ElyStateDB").collection("wishlist");
 
     // auth related api
     app.post("/jwt", async (req, res) => {
@@ -116,6 +117,38 @@ async function run() {
         console.log(err);
       }
     });
+
+
+    // guest crud
+    app.post("/wishlist", async(req, res) => {
+      try{
+        const wishlist = req.body
+        const isExist = await wishlistCollection.findOne({property_id: wishlist.property_id})
+        if(!isExist){
+          const result = await wishlistCollection.insertOne(wishlist)
+         return res.send({exists: false})
+        }
+        res.send({exists: true})
+      }catch(err){
+        console.log(err);
+      }
+
+    })
+    app.get("/wishlist", async(req, res) => {
+      try{
+        const email = req.query.email
+        if(email){
+          const query = {user_email: email}
+          const result = await wishlistCollection.find(query).toArray()
+          return res.send(result)
+        }
+        const result = await wishlistCollection.find().toArray()
+        res.send(result)
+      }catch(err){
+        console.log(err)
+      }
+    })
+
 
     // agent cruds
     app.post("/properties", async (req, res) => {
