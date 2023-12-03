@@ -149,6 +149,16 @@ async function run() {
       }
     })
 
+    app.delete("/wishlist/:id", async(req, res) => {
+      try{
+        const id = req.params.id
+        const query = {_id: new ObjectId(id)}
+        const result= await wishlistCollection.deleteOne(query)
+        res.send(result)
+      }catch(err){
+        console.log(err);
+      }
+    })
 
     // agent cruds
     app.post("/properties", async (req, res) => {
