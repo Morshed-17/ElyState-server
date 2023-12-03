@@ -180,6 +180,19 @@ async function run() {
           console.log(err);
         }
     })
+    app.get("/offers", async(req, res) => {
+        try{
+          const email = req.query.email;
+          if (email) {
+          const query = { buyer_email: email };
+          const result = await offersCollection.find(query).toArray();
+          return res.send(result);
+        }
+        
+        }catch(err){
+          console.log(err);
+        }
+    })
 
     // agent cruds
     app.post("/properties", async (req, res) => {
@@ -251,6 +264,19 @@ async function run() {
         console.log(err)
       }
     })
+    app.get("/offer", async(req, res) => {
+      try{
+        const email = req.query.email;
+        if (email) {
+        const query = { agent_email: email };
+        const result = await offersCollection.find(query).toArray();
+        return res.send(result);
+      }
+      
+      }catch(err){
+        console.log(err);
+      }
+  })
 
 
     //properties
