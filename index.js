@@ -48,6 +48,7 @@ async function run() {
 
     const usersCollection = client.db("ElyStateDB").collection("users");
     const wishlistCollection = client.db("ElyStateDB").collection("wishlist");
+    const offersCollection = client.db("ElyStateDB").collection("offers");
 
     // auth related api
     app.post("/jwt", async (req, res) => {
@@ -169,6 +170,15 @@ async function run() {
       }catch(err){
         console.log(err);
       }
+    })
+    app.post("/offers", async(req, res) => {
+        try{
+          const offer = req.body
+          const result = await offersCollection.insertOne(offer)
+          res.send(result)
+        }catch(err){
+          console.log(err);
+        }
     })
 
     // agent cruds
