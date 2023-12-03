@@ -129,24 +129,63 @@ async function run() {
     });
 
     // admin cruds
-    app.patch("/property/:id", async(req, res) => {
-      try{
-        const id = req.params.id
-      const filter = {_id: new ObjectId(id)}
-      const updatedStatus = req.body
-      
-      const status = {
-        $set: {
-          verification: updatedStatus.verification
-        }
-      }
-        const result = await propertiesCollection.updateOne(filter, status)
-        res.send(result)
-      }catch(err){
+    app.patch("/property/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id) };
+        const updatedStatus = req.body;
+
+        const status = {
+          $set: {
+            verification: updatedStatus.verification,
+          },
+        };
+        const result = await propertiesCollection.updateOne(filter, status);
+        res.send(result);
+      } catch (err) {
         console.log(err);
       }
+    });
 
-
+    app.patch("/users/:email", async (req, res) => {
+      try {
+        const email = req.params.email;
+        const filter = { email: email };
+        const updatedRole = req.body;
+        console.log(updatedRole, filter);
+        const role = {
+          $set: {
+            role: updatedRole.role,
+          },
+        };
+        const result = await usersCollection.updateOne(filter, role);
+        res.send(result);
+      } catch (err) {
+        res.send(err);
+      }
+    });
+    app.delete("/properties", async (req, res) => {
+      try {
+        const email = req.query.email;
+        if (email) {
+          const query = { agent_email: email };
+          const result = await propertiesCollection.deleteMany(query)
+          return res.send(result);
+        }
+        
+      } catch (err) {
+        console.log(err);
+      }
+    });
+    app.delete("/user/:id", async(req, res) => {
+      try{
+        const id = req.params.id
+        const query = {_id: new ObjectId(id)}
+        const result = usersCollection.deleteOne(query)
+        res.send(result)
+      }catch(err){
+        console.log(err)
+      }
     })
 
 
@@ -154,11 +193,11 @@ async function run() {
 
     app.get("/properties", async (req, res) => {
       try {
-        const email = req.query.email
-        if(email){
-          const query = {agent_email: email} 
+        const email = req.query.email;
+        if (email) {
+          const query = { agent_email: email };
           const result = await propertiesCollection.find(query).toArray();
-          return res.send(result)
+          return res.send(result);
         }
         const result = await propertiesCollection.find().toArray();
         res.send(result);
@@ -168,7 +207,6 @@ async function run() {
     });
     app.get("/property/:id", async (req, res) => {
       try {
-       
         const id = req.params;
         const query = { _id: new ObjectId(id) };
         const result = await propertiesCollection.findOne(query);
@@ -177,12 +215,12 @@ async function run() {
         console.log(err);
       }
     });
-    app.put("/property/:id", async(req, res) => {
-      try{
-        const id = req.params.id
-        const filter = {_id : new ObjectId(id)}
-        const options = {upsert : true}
-        const updatedProperty = req.body
+    app.put("/property/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id) };
+        const options = { upsert: true };
+        const updatedProperty = req.body;
         const property = {
           $set: {
             title: updatedProperty.title,
@@ -193,25 +231,29 @@ async function run() {
               start: updatedProperty.price.start,
               end: updatedProperty.price.end,
             },
-          }
-        }
-        const result = await propertiesCollection.updateOne(filter, property, options)
-        res.send(result)
-      }catch(err){
+          },
+        };
+        const result = await propertiesCollection.updateOne(
+          filter,
+          property,
+          options
+        );
+        res.send(result);
+      } catch (err) {
         console.log(err);
       }
-    })
-    app.delete("/property/:id", async(req, res) => {
-      try{
-        const id = req.params.id
-        
-        const query = {_id: new ObjectId(id)}
-        const result = await propertiesCollection.deleteOne(query)
-        res.send(result)
-      }catch(err){
-        res.send(err)
+    });
+    app.delete("/property/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+
+        const query = { _id: new ObjectId(id) };
+        const result = await propertiesCollection.deleteOne(query);
+        res.send(result);
+      } catch (err) {
+        res.send(err);
       }
-    })
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
