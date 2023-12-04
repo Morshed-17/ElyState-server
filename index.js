@@ -18,17 +18,17 @@ app.use(express.json());
 app.use(cookieParser());
 
 const verifyToken = async (req, res, next) => {
-  const token = req.cookies?.token;
-  console.log(token);
-  if (!token) {
-    return res.status(401).send({ message: "unauthorized access" });
+  console.log("inside verify token", req.headers.authorization);
+  if (!req.headers.authorization) {
+    return res.status(401).send({ message: "forbidden access" });
   }
+  const token = req.headers.authorization.split(" ")[1];
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
     if (err) {
       console.log(err);
-      return res.status(401).send({ message: "unauthorized access" });
+      return res.status(401).send({ message: "forbidden access" });
     }
-    req.user = decoded;
+    req.decoded = decoded;
     next();
   });
 };
@@ -53,17 +53,10 @@ async function run() {
     // auth related api
     app.post("/jwt", async (req, res) => {
       const user = req.body;
-      console.log("I need a new jwt", user);
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
         expiresIn: "365d",
       });
-      res
-        .cookie("token", token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-        })
-        .send({ success: true });
+      res.send({ token });
     });
 
     // Logout
@@ -104,13 +97,14 @@ async function run() {
         console.log(err);
       }
     });
-    app.get("/users", async (req, res) => {
+    app.get("/users",verifyToken ,async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
     app.get("/user", async (req, res) => {
       try {
         const query = req.query.email;
+
         // console.log("Query --->", query);
         const result = await usersCollection.findOne({ email: query });
         res.send(result);
@@ -119,80 +113,84 @@ async function run() {
       }
     });
 
-
     // guest crud
-    app.post("/wishlist", async(req, res) => {
-      try{
-        const wishlist = req.body
-        const isExist = await wishlistCollection.findOne({property_id: wishlist.property_id})
-        if(!isExist){
-          const result = await wishlistCollection.insertOne(wishlist)
-         return res.send({exists: false})
+    app.post("/wishlist", async (req, res) => {
+      try {
+        const wishlist = req.body;
+        const isExist = await wishlistCollection.findOne({
+          property_id: wishlist.property_id,
+          user_email: wishlist.user_email
+        });
+        console.log(isExist);
+        if (!isExist) {
+          const result = await wishlistCollection.insertOne(wishlist);
+          return res.send({ exists: false });
         }
-        res.send({exists: true})
-      }catch(err){
+        res.send({ exists: true });
+      } catch (err) {
         console.log(err);
       }
-
-    })
-    app.get("/wishlist", async(req, res) => {
-      try{
-        const email = req.query.email
-        if(email){
-          const query = {user_email: email}
-          const result = await wishlistCollection.find(query).toArray()
-          return res.send(result)
+    });
+    app.get("/wishlist",verifyToken, async (req, res) => {
+      try {
+        const email = req.query.email;
+        if(email !== req.decoded.email){
+          return res.status(401).send({ message: "forbidden access" });
         }
-        const result = await wishlistCollection.find().toArray()
-        res.send(result)
-      }catch(err){
-        console.log(err)
-      }
-    })
-
-    app.get("/wishlist/:id", async(req, res) => {
-      try{
-        const id = req.params.id
-        const query = {_id: new ObjectId(id)}
-        const result = await wishlistCollection.findOne(query)
-        res.send(result)
-      }catch(err){
-        console.log(err)
-      }
-    })
-
-    app.delete("/wishlist/:id", async(req, res) => {
-      try{
-        const id = req.params.id
-        const query = {_id: new ObjectId(id)}
-        const result= await wishlistCollection.deleteOne(query)
-        res.send(result)
-      }catch(err){
+        if (email) {
+          const query = { user_email: email };
+          const result = await wishlistCollection.find(query).toArray();
+          return res.send(result);
+        }
+        const result = await wishlistCollection.find().toArray();
+        res.send(result);
+      } catch (err) {
         console.log(err);
       }
-    })
-    app.post("/offers", async(req, res) => {
-        try{
-          const offer = req.body
-          const result = await offersCollection.insertOne(offer)
-          res.send(result)
-        }catch(err){
-          console.log(err);
-        }
-    })
-    app.get("/offers", async(req, res) => {
-        try{
-          const email = req.query.email;
-          if (email) {
+    });
+
+    app.get("/wishlist/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await wishlistCollection.findOne(query);
+        res.send(result);
+      } catch (err) {
+        console.log(err);
+      }
+    });
+
+    app.delete("/wishlist/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await wishlistCollection.deleteOne(query);
+        res.send(result);
+      } catch (err) {
+        console.log(err);
+      }
+    });
+    app.post("/offers", async (req, res) => {
+      try {
+        const offer = req.body;
+        const result = await offersCollection.insertOne(offer);
+        res.send(result);
+      } catch (err) {
+        console.log(err);
+      }
+    });
+    app.get("/offers", async (req, res) => {
+      try {
+        const email = req.query.email;
+        if (email) {
           const query = { buyer_email: email };
           const result = await offersCollection.find(query).toArray();
           return res.send(result);
         }
-        
-        }catch(err){
-          console.log(err);
-        }
-    })
+      } catch (err) {
+        console.log(err);
+      }
+    });
 
     // agent cruds
     app.post("/properties", async (req, res) => {
@@ -229,7 +227,6 @@ async function run() {
         const email = req.params.email;
         const filter = { email: email };
         const updatedRole = req.body;
-        console.log(updatedRole, filter);
         const role = {
           $set: {
             role: updatedRole.role,
@@ -244,46 +241,63 @@ async function run() {
     app.delete("/properties", async (req, res) => {
       try {
         const email = req.query.email;
+
         if (email) {
           const query = { agent_email: email };
-          const result = await propertiesCollection.deleteMany(query)
+          const result = await propertiesCollection.deleteMany(query);
           return res.send(result);
         }
-        
       } catch (err) {
         console.log(err);
       }
     });
-    app.delete("/user/:id", async(req, res) => {
-      try{
-        const id = req.params.id
-        const query = {_id: new ObjectId(id)}
-        const result = usersCollection.deleteOne(query)
-        res.send(result)
-      }catch(err){
-        console.log(err)
-      }
-    })
-    app.get("/offer", async(req, res) => {
-      try{
-        const email = req.query.email;
-        if (email) {
-        const query = { agent_email: email };
-        const result = await offersCollection.find(query).toArray();
-        return res.send(result);
-      }
-      
-      }catch(err){
+    app.delete("/user/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = usersCollection.deleteOne(query);
+        res.send(result);
+      } catch (err) {
         console.log(err);
       }
-  })
+    });
+    app.get("/offer", async (req, res) => {
+      try {
+        const email = req.query.email;
 
+        if (email) {
+          const query = { agent_email: email };
+          const result = await offersCollection.find(query).toArray();
+          return res.send(result);
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    });
+    app.patch("/offer/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id) };
+        const updatedStatus = req.body;
+        const status = {
+          $set: {
+            status: updatedStatus.status,
+          },
+        };
+
+        const result = await offersCollection.updateOne(filter, status);
+        return res.send(result);
+      } catch (err) {
+        console.log(err);
+      }
+    });
 
     //properties
 
     app.get("/properties", async (req, res) => {
       try {
         const email = req.query.email;
+
         if (email) {
           const query = { agent_email: email };
           const result = await propertiesCollection.find(query).toArray();
