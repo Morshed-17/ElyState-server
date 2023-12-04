@@ -97,7 +97,7 @@ async function run() {
         console.log(err);
       }
     });
-    app.get("/users",verifyToken ,async (req, res) => {
+    app.get("/users", verifyToken, async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
@@ -119,7 +119,7 @@ async function run() {
         const wishlist = req.body;
         const isExist = await wishlistCollection.findOne({
           property_id: wishlist.property_id,
-          user_email: wishlist.user_email
+          user_email: wishlist.user_email,
         });
         console.log(isExist);
         if (!isExist) {
@@ -131,10 +131,10 @@ async function run() {
         console.log(err);
       }
     });
-    app.get("/wishlist",verifyToken, async (req, res) => {
+    app.get("/wishlist", verifyToken, async (req, res) => {
       try {
         const email = req.query.email;
-        if(email !== req.decoded.email){
+        if (email !== req.decoded.email) {
           return res.status(401).send({ message: "forbidden access" });
         }
         if (email) {
@@ -187,6 +187,33 @@ async function run() {
           const result = await offersCollection.find(query).toArray();
           return res.send(result);
         }
+      } catch (err) {
+        console.log(err);
+      }
+    });
+    app.get("/offer/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = {_id: new ObjectId(id)}
+        const result = await offersCollection.findOne(query);
+        res.send(result)
+      } catch (err) {
+        console.log(err);
+      }
+    });
+    app.patch("/offer/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const filter = {_id: new ObjectId(id)}
+        const updatedStatus = req.body;
+
+        const status = {
+          $set: {
+            status: updatedStatus.status,
+          },
+        };
+        const result = await offersCollection.updateOne(filter, status);
+        res.send(result)
       } catch (err) {
         console.log(err);
       }
