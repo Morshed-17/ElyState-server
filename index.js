@@ -124,16 +124,33 @@ async function run() {
         console.log(err);
       }
     });
-    app.get("/reviews/:id", verifyToken, async (req, res) => {
+    app.get("/reviews/:id", async (req, res) => {
       const id = req.params.id;
       const query = { property_id: id };
 
       const result = await reviewsCollection.find(query).toArray();
       res.send(result);
     });
-    app.get("/reviews", verifyToken, async (req, res) => {
+    app.get("/reviews", async (req, res) => {
       const result = await reviewsCollection.find().toArray();
       res.send(result);
+    });
+    app.get("/my-reviews/:email", async (req, res) => {
+      const email = req.params.email
+      const query = {reviewer_email: email}
+      const result = await reviewsCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    app.delete("/reviews/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await reviewsCollection.deleteOne(query);
+        res.send(result);
+      } catch (err) {
+        console.log(err);
+      }
     });
 
     app.post("/wishlist", async (req, res) => {
