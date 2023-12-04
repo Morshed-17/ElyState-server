@@ -49,6 +49,7 @@ async function run() {
     const usersCollection = client.db("ElyStateDB").collection("users");
     const wishlistCollection = client.db("ElyStateDB").collection("wishlist");
     const offersCollection = client.db("ElyStateDB").collection("offers");
+    const reviewsCollection = client.db("ElyStateDB").collection("reviews");
 
     // auth related api
     app.post("/jwt", async (req, res) => {
@@ -114,6 +115,27 @@ async function run() {
     });
 
     // guest crud
+    app.post("/reviews", async (req, res) => {
+      try {
+        const review = req.body;
+        const result = await reviewsCollection.insertOne(review);
+        res.send(result);
+      } catch (err) {
+        console.log(err);
+      }
+    });
+    app.get("/reviews/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const query = { property_id: id };
+
+      const result = await reviewsCollection.find(query).toArray();
+      res.send(result);
+    });
+    app.get("/reviews", verifyToken, async (req, res) => {
+      const result = await reviewsCollection.find().toArray();
+      res.send(result);
+    });
+
     app.post("/wishlist", async (req, res) => {
       try {
         const wishlist = req.body;
@@ -194,9 +216,9 @@ async function run() {
     app.get("/offer/:id", async (req, res) => {
       try {
         const id = req.params.id;
-        const query = {_id: new ObjectId(id)}
+        const query = { _id: new ObjectId(id) };
         const result = await offersCollection.findOne(query);
-        res.send(result)
+        res.send(result);
       } catch (err) {
         console.log(err);
       }
@@ -204,7 +226,7 @@ async function run() {
     app.patch("/offer/:id", async (req, res) => {
       try {
         const id = req.params.id;
-        const filter = {_id: new ObjectId(id)}
+        const filter = { _id: new ObjectId(id) };
         const updatedStatus = req.body;
 
         const status = {
@@ -213,7 +235,7 @@ async function run() {
           },
         };
         const result = await offersCollection.updateOne(filter, status);
-        res.send(result)
+        res.send(result);
       } catch (err) {
         console.log(err);
       }
